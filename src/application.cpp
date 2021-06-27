@@ -103,18 +103,18 @@ int main(void)
     vertexBufferLayout layout_l;
     renderer render;
 
-    p.indicesData();
-    vertexBuffer vbp(nullptr, p.sizeOfData(), GL_DYNAMIC_DRAW);
+    unsigned int* indexPreydata = p.indicesData();//need to call index data first because index count is calculated by index data
+    vertexBuffer vbp(nullptr, 26 * 16 * sizeof(float) , GL_DYNAMIC_DRAW);
     layout_p.push<float>(2); //arguments for out arrtibPointer float for type and 2 for vertex size rest of datas are handeled by the class
     layout_p.push<float>(2); //second push for texture
     vap.addBuffer(vbp,layout_p);//passing layout to our vertex array anong with buffers. this will take care of binding stuff and adding attribs
-    indexBuffer ibp(p.indicesData(), p.countOfIndices() , GL_STATIC_DRAW);
+    indexBuffer ibp(indexPreydata, p.countOfIndices() , GL_STATIC_DRAW);
 
     unsigned int* indexSnakedata = s.indicesData();
-    vertexBuffer vbs(nullptr , 150 * 8 * sizeof(float) , GL_DYNAMIC_DRAW); //setting max size of the buffer
+    vertexBuffer vbs(nullptr , 150 * 8 * sizeof(float) , GL_DYNAMIC_DRAW); //150 * 8 setting max size of the buffer
     layout_s.push<float>(2);
     vas.addBuffer(vbs, layout_s);
-    indexBuffer ibs(s.indicesData(), s.countOfIndices() , GL_STATIC_DRAW);
+    indexBuffer ibs(indexSnakedata, s.countOfIndices() , GL_STATIC_DRAW);
     
     vertexBuffer vbl(l.vertexData(), l.sizeOfData(), GL_STATIC_DRAW);
     layout_l.push<float>(2);
@@ -137,7 +137,7 @@ int main(void)
    
   
     //screen loop comming ahead::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-    texture textures("resources/textures/spritesheet.png");
+    texture textures("resources/textures/spsheet2.png");
     textures.bind(0);
 
     shade.unbind();
@@ -167,7 +167,7 @@ int main(void)
     float* randomCoordinates = nullptr;
     unsigned int collisionCase = 3; //case 3 or case 2 collisions resets the random coordinates 
   
-    randomCoordinates = (float*)p.randomCoordinate();
+    randomCoordinates = (float*)p.randomCoordinate(s.getXCoordinates(), s.getYCoordinates());
     p.parseWordList();
  
     /*
@@ -194,39 +194,43 @@ int main(void)
         render.clear();
 
         //rendering grid
+        /*
         gridShader.bind();
         gridShader.setUniform4f("u_color", 0.0f, 0.0f, 0.5f, 0.8f);
         gridShader.setUniformMatrix4fv("u_MVP", mvp);
-        render.draw(vag, ibg, GL_LINES);
-
+        render.draw(vag, ibg, GL_LINES, ibg.getCount());
+        */
         //rendering line
         gridShader.bind();
         gridShader.setUniform4f("u_color", 0.0f, 0.3f, 0.5f, 0.8f);
         gridShader.setUniformMatrix4fv("u_MVP", mvp);
-        render.draw(val, ibl, GL_LINES);
+        render.draw(val, ibl, GL_LINES, ibl.getCount());
 
-        unsigned int preyCollisionOrder = p.matchRancoordinateWithIndex();
+        //HANDELING COLLISION
+        bool boarderCollisionOrder = s.getBoarderCollisionOrd();
+        bool selfCollisionOrder = s.getSelfCollisionOrd();
+        unsigned int preyCollisionOrder = p.matchRancoordinateWithIndex(s.getXCoordinates() , s.getYCoordinates(), boarderCollisionOrder, selfCollisionOrder);
         s.setCollisionOrd(preyCollisionOrder);
         collisionCase = s.preyCollision();
-        if (collisionCase == 3 || collisionCase == 2)//case 3 or case 2 collisions resets the random coordinates
+        p.parseScore(s.getScore());
+        if (collisionCase == 3 || collisionCase == 2)//case 3 or case 2 collisions resets the random coordinates and random words
         {
-            randomCoordinates = (float*)p.randomCoordinate();
+            p.clearMap();
+            randomCoordinates = (float*)p.randomCoordinate(s.getXCoordinates(), s.getYCoordinates());
             p.parseWordList();
-            collisionCase = 0;
-            p.setCollisionOrder(collisionCase);
         }
-        //p.setCollisionOrder(collisionOrder);
        
         //batching all 5 preys in one draw call
         vbp.bind();
-        glBufferSubData(GL_ARRAY_BUFFER, 0, p.sizeOfData(), p.vertexData());
+        const void* preyVertexData = p.vertexData();// sizeOfData is calculated inside vertexData so we have to call vertexData befor using sizeOfData
+        glBufferSubData(GL_ARRAY_BUFFER, 0, p.sizeOfData(), preyVertexData);
         shade.bind();
         shade.setUniformMatrix4fv("u_MVP", mvp);
         shade.setUniform1i("u_Texture", 0);
         shade.setUniform2f("v_TextureCoordinateShift", 0.0 , 0.0);
-        render.draw(vap, ibp, GL_TRIANGLES);
-
-        /*
+        render.draw(vap, ibp, GL_TRIANGLES, p.indexCountForCurrentLength());
+   
+        /*///////////////////////////////////////////old prey code using translation matrix for placing needed many draw calls
         if(collisionOrder < 1)
         {       
             glm::vec3 translationB(randomXandY[0], randomXandY[5], 0);
@@ -242,20 +246,16 @@ int main(void)
      
         //rendering snake
         vbs.bind();
-        ibs.bind();
-        vas.bind();
-
-        const void* vertexdata = s.vertexData();
-        glBufferSubData(GL_ARRAY_BUFFER, 0, s.sizeOfData(), vertexdata);
+        const void* snakeVertexData = s.vertexData();// sizeOfData is calculated inside vertexData so we have to call vertexData befor using sizeOfData
+        glBufferSubData(GL_ARRAY_BUFFER, 0, s.sizeOfData(), snakeVertexData);
         gridShader.bind();
         gridShader.setUniformMatrix4fv("u_MVP", mvp);
-        gridShader.setUniform4f("u_color", 0.0f, 0.3f, 0.8f, 1.0f);
-        glDrawElements(GL_TRIANGLES, s.indexCountForCurrentLength(), GL_UNSIGNED_INT, nullptr);
-   
+        gridShader.setUniform4f("u_color", 0.0f, 0.5f, 0.7f, 0.0f);
+        render.draw(vas, ibs, GL_TRIANGLES, s.indexCountForCurrentLength());
+      
         //never forget to free snake data
-        delete[] vertexdata;
+        delete[] snakeVertexData;
        
-
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
 

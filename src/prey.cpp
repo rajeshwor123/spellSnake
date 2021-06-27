@@ -7,14 +7,15 @@
 
 prey::prey() : collisionOrder(0) , indexCount(0)
 {
+    scoreIndex[0] = 0;
     ranWordLength = 0;
-    coordinatesToBeRemoved[0] = 800.0f;
-    coordinatesToBeRemoved[1] = 800.0f;
+    coordinatesToBeRemoved[0] = 1000.0f;
+    coordinatesToBeRemoved[1] = 1000.0f;
     randomCoordinates[0] = 0;
     indexOrder[0] = 0;
-    size = 80 * sizeof(float);
-    count = 6;
-    spriteWidth = 1 / 26.0f;
+    size = 0;
+    count = 0;
+    spriteWidth = 1 / 37.0f;
     int count = 0;
     char j = 'a';
     for (char i = 'A'; i <= 'Z'; i++)
@@ -24,7 +25,12 @@ prey::prey() : collisionOrder(0) , indexCount(0)
         count++;
         j++;
     }
-
+    count = 0;
+    for(unsigned int i = 26; i < 36 ; i++)
+    {
+        scoreMap[count] = i ;
+        count++;
+    }
 }
 
 const void* prey::vertexData()
@@ -39,12 +45,19 @@ const void* prey::vertexData()
     */
     float x;
     float y;
-    static float positions[80];
+    static float positions[160 * 2 + 96];
     int textureOffset = 0;
     unsigned int objCount = 0;
     int vertexOffset = 20;
+    unsigned int loopCount = ranWordLength * 32;
+    indexCountForCurrentLen = 0;
+    unsigned int j = 0;
+    float statsDispX = 20;
+    float statsDispY = 570;
+    float scoreDispX = 630;
+    float scoreDispY = 570;
 
-    for(int i = 0 ; i < 80; i = i + 16 )
+    for(unsigned int i = 0 ; i < loopCount; i = i + 32 )
     {
         if(coordinatesToBeRemoved[0] == randomCoordinates[objCount] && coordinatesToBeRemoved[1] == randomCoordinates[objCount+10])
         {
@@ -60,20 +73,6 @@ const void* prey::vertexData()
             textureOffset = indexOrder[objCount];
         }
         
-        /*
-        if (collisionOrder < objCount+1)
-        {
-            x = randomCoordinates[objCount];
-            y = randomCoordinates[objCount+10];
-            vertexOffset = 20;
-        }
-        else
-        {
-            x = 0;
-            y = 0;
-            vertexOffset = 0;
-        }
-        */
         positions[i+0] =x ;
         positions[i+1] =y ;
         positions[i+2] = spriteWidth * textureOffset;
@@ -90,11 +89,60 @@ const void* prey::vertexData()
         positions[i+13] = y+vertexOffset;
         positions[i+14] = spriteWidth * textureOffset;
         positions[i+15] = 1.0f;
+       
+        positions[i + 16] = statsDispX;
+        positions[i + 17] = statsDispY;
+        positions[i + 18] = spriteWidth * indexOrder[objCount];
+        positions[i + 19] = 0.0f;
+        positions[i + 20] = statsDispX + 20;
+        positions[i + 21] = statsDispY;
+        positions[i + 22] = (spriteWidth * indexOrder[objCount]) + spriteWidth;
+        positions[i + 23] = 0.0f;
+        positions[i + 24] = statsDispX + 20;
+        positions[i + 25] = statsDispY + 20;
+        positions[i + 26] = (spriteWidth * indexOrder[objCount]) + spriteWidth;
+        positions[i + 27] = 1.0f;
+        positions[i + 28] = statsDispX;
+        positions[i + 29] = statsDispY + 20;
+        positions[i + 30] = spriteWidth * indexOrder[objCount];
+        positions[i + 31] = 1.0f;
 
+        //std::cout << positions[0]<<","<<positions[1]<<","<<indexOrder[0]<< std::endl;
+        j = j + 32;
+        indexCountForCurrentLen = indexCountForCurrentLen + 12;
         objCount++;
-        //textureOffset++;
-        
+        statsDispX = statsDispX + 25;
+            
     }
+
+    objCount = 0;
+    for(unsigned int i = 0; i < 96 ; i = i + 16)
+    {
+        positions[j + 0] = scoreDispX;
+        positions[j + 1] = scoreDispY;
+        positions[j + 2] = spriteWidth * scoreIndex[objCount];
+        positions[j + 3] = 0.0f;
+        positions[j + 4] = scoreDispX + 20;
+        positions[j + 5] = scoreDispY;
+        positions[j + 6] = (spriteWidth * scoreIndex[objCount]) + spriteWidth;
+        positions[j + 7] = 0.0f;
+        positions[j + 8] = scoreDispX + 20;
+        positions[j + 9] = scoreDispY + 20;
+        positions[j + 10] = (spriteWidth * scoreIndex[objCount]) + spriteWidth;
+        positions[j + 11] = 1.0f;
+        positions[j + 12] = scoreDispX;
+        positions[j + 13] = scoreDispY + 20;
+        positions[j + 14] = spriteWidth * scoreIndex[objCount];
+        positions[j + 15] = 1.0f;
+
+        j = j + 16;
+        scoreDispX = scoreDispX + 25;
+        indexCountForCurrentLen = indexCountForCurrentLen + 6;
+        objCount++;
+    }
+
+    size = j * sizeof(float);
+
 return positions;
 
 }
@@ -107,10 +155,10 @@ unsigned int* prey::indicesData()
     };
     return indices;
     */
-    static unsigned int indices[30];
+    static unsigned int indices[156];
     unsigned int i = 0;
     unsigned int offset = 0;
-    for (float y = 0; y <= 4; y = y + 1)
+    for (float y = 0; y < 26; y = y + 1)
     {
             indices[i] = 0 + offset;
             indices[i + 1] = 1 + offset;
@@ -126,13 +174,16 @@ unsigned int* prey::indicesData()
     return indices;
 }
 
-const float* prey::randomCoordinate()
+const float* prey::randomCoordinate(float snakeX, float snakeY)
 {
-    snake s;
-    float snakeX = s.getXCoordinates();
-    float snakeY = s.getYCoordinates();
+    
     int x = 0;
     srand((unsigned int)(time(nullptr)));//seeding unique unsigned integer for random number generation
+
+    for(int i = 0; i < 20; i++)
+    {
+        randomCoordinates[i] = 0;
+    }
 
     for(int i = 0 ; i < 10 ; i++)
     {
@@ -151,7 +202,7 @@ const float* prey::randomCoordinate()
     {
         y = rand() % 540;
         y = y - (y % 20);
-        for (int j = 5; j < i; j++)
+        for (int j = 10; j < i; j++)
         {
             if ( y == (int)randomCoordinates[j] || y == (int)snakeY )
                 i--;
@@ -166,7 +217,7 @@ const float* prey::randomCoordinate()
 unsigned int* prey::parseWordList()
 {
     srand((unsigned int)(time(nullptr)));
-    int x = rand() % 2;
+    int x = rand() % 120;
     std::ifstream stream("resources/wordList/wordList.txt");
     std::string line;
     unsigned int count = 0;
@@ -205,16 +256,29 @@ unsigned int* prey::parseWordList()
         std::cout << t.first.first<<", "<< t.first.second << " = " << t.second << std::endl;
     std::cout << std::endl << std::endl;
     */
+
     ranWordLength = randomWord.length();
     return indexOrder;
 }
 
-unsigned int prey::matchRancoordinateWithIndex()
+unsigned int* prey::parseScore(unsigned int score)
+{
+    int num = score;
+
+    for( int i = 5 ; i >= 0 ; i-- )
+    {
+       scoreIndex[i] = scoreMap[num % 10];
+        num = num / 10;
+    }
+
+    return scoreIndex;
+
+}
+
+unsigned int prey::matchRancoordinateWithIndex(float snakeX, float snakeY, bool boarderCollisionOrder, bool selfCollisionOrder)
 {   
-    snake s;
-    float snakeX = s.getXCoordinates();
-    float snakeY = s.getYCoordinates();
-   
+    static unsigned int previousCollisionorder;
+    previousCollisionorder = collisionOrder;
     for(unsigned int i = 0; i < ranWordLength ; i++)
     {
         if(snakeX == randomCoordinates[i] && snakeY == randomCoordinates[i+10])
@@ -236,15 +300,27 @@ unsigned int prey::matchRancoordinateWithIndex()
             }
         }
     }
+    if (selfCollisionOrder == 1)
+    {
+        collisionOrder = 0;
+        indexCount = 0;
+    }
+    if(boarderCollisionOrder == 1)
+    {
+        collisionOrder = 0;
+        indexCount = 0;
+    }
     if (collisionOrder == ranWordLength)
     {
+        indexCount = 0;
+        collisionOrder = 0;
         return 2;//collision order complete
     }
-    else if (collisionOrder == 0)
+    else if (collisionOrder == previousCollisionorder)
     {
         return 0;//no collision
     }
-    else if (collisionOrder < ranWordLength && collisionOrder > 0)
+    else if (collisionOrder > previousCollisionorder)
     {
         return 1;//unit collision
     }

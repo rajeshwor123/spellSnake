@@ -6,7 +6,7 @@
 #include <Windows.h>
 
 prey p;
-snake::snake() : currentKey(GLFW_KEY_UNKNOWN), collisionOrder(0),boarderCollisionOrder(0),snakeLength(2),indexCountForCurrentLen(0)
+snake::snake() : currentKey(GLFW_KEY_UNKNOWN),score(0), collisionOrder(0),boarderCollisionOrder(0),selfCollisionOrder(0),snakeLength(2),indexCountForCurrentLen(0)
     {
 
     //size = 60 * 8 *sizeof(float);
@@ -62,11 +62,15 @@ const void* snake::vertexData()
         position[j+5] = y[i] + 20;
         position[j+6] = x[i];
         position[j+7] = y[i] + 20;
-        
+
         indexCountForCurrentLen = indexCountForCurrentLen + 6;
         j = j + 8;
     
-    }    
+    }   
+
+    if(snakeLength >= 3)
+        selfCollision();
+        
         size = j * sizeof(float);
         return position;
        
@@ -82,7 +86,7 @@ const void* snake::vertexData()
         return indices;
         */
 
-        static unsigned int indices[906];
+        static unsigned int indices[900];
         unsigned int i = 0;
         unsigned int offset = 0;
         for (int y = 0; y < 150 ; y = y + 1)
@@ -101,9 +105,24 @@ const void* snake::vertexData()
         return indices;
     }
 
+    void snake::selfCollision()
+    {
+        for(unsigned int i = 1 ; i < snakeLength ; i++)
+        {
+           // std::cout << x[0] << "   " << x[i] << std::endl;
+           
+           if(x[0] == x[i] && y[0] == y[i])
+           {
+               selfCollisionOrder = 1;
+               gameOver();
+           }
+            
+        }
+    }
+
     void snake::boarderCollision()
     {
-        if (x[0] < 0.0f || x[0] > 800.0f || y[0] < 0.0f || y[0] > 540.0f)
+        if (x[0] < 0.0f || x[0] > 780.0f || y[0] < 0.0f || y[0] > 540.0f)
         {
             boarderCollisionOrder = 1;
             gameOver();
@@ -111,6 +130,11 @@ const void* snake::vertexData()
     }
     unsigned int snake::preyCollision()
     {
+        if (selfCollisionOrder == 1)
+        {
+            selfCollisionOrder = 0;
+            return 3;
+        }
         if(boarderCollisionOrder == 1)
         {
             boarderCollisionOrder = 0;
@@ -120,15 +144,19 @@ const void* snake::vertexData()
         {
             return collisionOrder;
         }
-        else if (collisionOrder == 1)
+        else if (collisionOrder == 1 )
         {
-            snakeLength++;
+            if(snakeLength != 150)
+                snakeLength++;
+            score = score + 1;
             return collisionOrder;
 
         }
         else if (collisionOrder == 2)
         {
-            snakeLength++;
+            if(snakeLength != 150)
+                snakeLength++;
+            score = score + 1;
             return collisionOrder; //reset random coordinates for case 2
         }
 
@@ -137,8 +165,7 @@ const void* snake::vertexData()
             gameOver();
             return collisionOrder;//reset random coordinates for case 3
         }
-
-        
+        //////////////////////////////////////////////////keeping old collision code just for reference
         /*
         //ranXandy[10] first 5 elements denote x coordinates next 5 ,y coordinates
         if (x[0] == *(ranXandY) && y[0] == *(ranXandY + 10) && collisionOrder == 0)
@@ -204,7 +231,7 @@ const void* snake::vertexData()
             }
         }
         else return collisionOrder;
-        */
+        *//////////////////////////////////////////////////////////////////////////////////
     }
     
     void snake::gameOver()
@@ -213,14 +240,15 @@ const void* snake::vertexData()
         currentKey = GLFW_KEY_UNKNOWN;
         x[0] = 400.0f;
         y[0] = 280.f;
-        collisionOrder = 0;
-        
+      
         int msgboxID = MessageBox(
             NULL,
-            (LPCWSTR)L"Your score is ",
+            (LPCWSTR)L" Try again",
             (LPCWSTR)L"GAME OVER",
             MB_ICONWARNING | MB_OK | MB_DEFBUTTON2
         );
+
+        score = 0;
 
     }
 

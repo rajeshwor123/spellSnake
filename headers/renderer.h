@@ -20,5 +20,5 @@ private:
 
 public:
 	void clear() const;
-	void draw(const vertexArray& va, const indexBuffer& ib, unsigned int drawType) const;
+	void draw(const vertexArray& va, const indexBuffer& ib, unsigned int drawType, unsigned int indexCountCurrentCall) const;
 };

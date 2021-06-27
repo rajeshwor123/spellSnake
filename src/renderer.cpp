@@ -16,12 +16,12 @@ bool glLogCall(const char* function, const char* file, int line)
     return true;
 }
 
-void renderer::draw(const vertexArray& va, const indexBuffer& ib, unsigned int drawType) const
+void renderer::draw(const vertexArray& va, const indexBuffer& ib, unsigned int drawType, unsigned int indexCountCurrentCall) const
 {
     //binding everything and using draw call
     va.bind();
     ib.bind();
-    glCall(glDrawElements(drawType, ib.getCount(), GL_UNSIGNED_INT, nullptr));
+    glCall(glDrawElements(drawType, indexCountCurrentCall , GL_UNSIGNED_INT, nullptr));
 
 }
 

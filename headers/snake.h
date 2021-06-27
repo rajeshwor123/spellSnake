@@ -4,15 +4,17 @@ class snake
 {
 
 private:
-	 float x[150];
-	 float y[150];
+	 float x[200];
+	 float y[200];
 	 unsigned int size;
 	 unsigned int count;
 	 int currentKey;
 	 unsigned int indexCountForCurrentLen;
 	 unsigned int collisionOrder;
 	 bool boarderCollisionOrder;
+	 bool selfCollisionOrder;
 	 unsigned int snakeLength;
+	 unsigned int score;
 
 public:
 	snake();
@@ -20,6 +22,7 @@ public:
 	{
 	
 	}
+	void selfCollision();
 	const void* vertexData();
 	unsigned int* indicesData();
 	void boarderCollision();
@@ -52,6 +55,19 @@ public:
 	}
 	inline void setCollisionOrd(unsigned int Collision) {
 		collisionOrder = Collision;
+	}
+	inline void setBoarderCollisionOrd(unsigned int boarderCollisionOrd) {
+		boarderCollisionOrder = boarderCollisionOrd;
+	}
+	inline bool getBoarderCollisionOrd() {
+		return boarderCollisionOrder;
+	}
+	inline bool getSelfCollisionOrd() {
+		return selfCollisionOrder;
+	}
+	inline unsigned int getScore()
+	{
+		return score;
 	}
 };
 
