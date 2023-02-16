@@ -1,2 +1,1 @@
-# spellSnake C++ and openGL
-snake eats alphabets to make a word 
+# spellSnake C++ and openGL, snake eats alphabets to make a word 
